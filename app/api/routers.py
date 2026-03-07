@@ -31,24 +31,8 @@ async def shorten_link(link: str = Query(min_length=3)) -> str:
         await session.commit()
         return f'http://127.0.0.1:8000/links/{new_link.short_url}'
 
-@router.get('/{short_link}')
-async def get_long_link(short_link: str) -> RedirectResponse:
-    async with (async_session_maker() as session):
-        result = await session.execute(
-            select(LinkModel).where(LinkModel.short_url == short_link)
-        )
-        link = result.scalar_one_or_none()
-
-        if not link:
-            raise HTTPException(status_code=404, detail="Link not found")
-
-        link.used_count += 1
-        await session.commit()
-
-        return RedirectResponse(url=link.long_url)
-
 @router.get('/info/{short_link}', response_model=LinkInfo)
-async def shorten_link(short_link: str) -> LinkInfo:
+async def shorten_link_info(short_link: str) -> LinkInfo:
     async with async_session_maker() as session:
         result = await session.execute(
             select(LinkModel).where(LinkModel.short_url == short_link)
@@ -64,3 +48,19 @@ async def shorten_link(short_link: str) -> LinkInfo:
             created_at=link.created_at,
         )
         return info
+
+@router.get('/{short_link}')
+async def get_long_link(short_link: str) -> RedirectResponse:
+    async with (async_session_maker() as session):
+        result = await session.execute(
+            select(LinkModel).where(LinkModel.short_url == short_link)
+        )
+        link = result.scalar_one_or_none()
+
+        if not link:
+            raise HTTPException(status_code=404, detail="Link not found")
+
+        link.used_count += 1
+        await session.commit()
+
+        return RedirectResponse(url=link.long_url)
