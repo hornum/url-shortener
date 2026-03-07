@@ -4,10 +4,12 @@ import secrets
 
 from fastapi import APIRouter, Query, HTTPException
 from sqlalchemy import select
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, JSONResponse
 
 from app.models.links import LinkModel
 from app.db.session import async_session_maker
+
+from app.schemas.links import LinkInfo
 
 
 ALPHABET = string.ascii_letters + string.digits
@@ -17,7 +19,7 @@ def generate_random_string():
 
 router = APIRouter(prefix="/links", tags=["Links"])
 @router.post('/')
-async def shorten_link(link: str = Query(min_length=3)):
+async def shorten_link(link: str = Query(min_length=3)) -> str:
     async with async_session_maker() as session:
         new_link = LinkModel(
             long_url=link,
@@ -27,10 +29,10 @@ async def shorten_link(link: str = Query(min_length=3)):
         )
         session.add(new_link)
         await session.commit()
-        return f'{new_link.short_url}'
+        return f'http://127.0.0.1:8000/links/{new_link.short_url}'
 
 @router.get('/{short_link}')
-async def get_long_link(short_link: str):
+async def get_long_link(short_link: str) -> RedirectResponse:
     async with (async_session_maker() as session):
         result = await session.execute(
             select(LinkModel).where(LinkModel.short_url == short_link)
@@ -45,6 +47,20 @@ async def get_long_link(short_link: str):
 
         return RedirectResponse(url=link.long_url)
 
-@router.get('/{short_link}/info')
-async def shorten_link(short_link: str):
-    pass
+@router.get('/info/{short_link}', response_model=LinkInfo)
+async def shorten_link(short_link: str) -> LinkInfo:
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(LinkModel).where(LinkModel.short_url == short_link)
+        )
+        link = result.scalar_one_or_none()
+        if not link:
+            raise HTTPException(status_code=404, detail="Link not found")
+        info = LinkInfo(
+            link_id=link.id,
+            short_link=f'http://127.0.0.1:8000/links/{link.short_url}',
+            long_link=link.long_url,
+            used_count=link.used_count,
+            created_at=link.created_at,
+        )
+        return info

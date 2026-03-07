@@ -1,9 +1,10 @@
-import datetime
+from datetime import datetime
 
 from pydantic import BaseModel
 
 class LinkInfo(BaseModel):
-    id: int
+    link_id: int
     short_link: str
     long_link: str
     used_count: int
+    created_at: datetime
