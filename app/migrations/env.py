@@ -10,7 +10,7 @@ from alembic import context
 sys.path.insert(0, dirname(dirname(dirname(abspath(__file__)))))
 
 from app.db.session import Base, DATABASE_URL
-from app.models.links import MakeShortModel
+from app.models.links import LinkModel
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

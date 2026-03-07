@@ -3,7 +3,7 @@ import datetime
 
 from app.db.session import Base
 
-class MakeShortModel(Base):
+class LinkModel(Base):
     __tablename__ = 'Links'
 
     id = Column(Integer, primary_key=True)
